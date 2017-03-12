@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity{
     boolean parenthesis = false;
 
     LinkedList<String> stack = new LinkedList<String>();
+    LinkedList<Float> operands = new LinkedList<Float>();
     ArrayList<String> postfix = new ArrayList<String>();
 
     HashMap<String,Integer> precedenceValue = new HashMap<String, Integer>();
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity{
 
         precedenceValue.put("x",3);
         precedenceValue.put("/",3);
+        precedenceValue.put("%",3);
         precedenceValue.put("+",2);
         precedenceValue.put("-",2);
         precedenceValue.put("(",1);
@@ -96,7 +98,9 @@ public class MainActivity extends AppCompatActivity{
         //algo for infix to postfix
         //http://interactivepython.org/runestone/static/pythonds/BasicDS/InfixPrefixandPostfixExpressions.html
 
-        String[] data = input.split("(?<=[-+x/(])|(?=[-+x/)])");
+        String[] data = input.split("(?<=[-+x/%(])|(?=[-+x/%)])");
+
+        Log.d("LOG", Arrays.toString(data));
 
         int i;
 
@@ -125,22 +129,48 @@ public class MainActivity extends AppCompatActivity{
             postfix.add(stack.removeLast());
         }
 
-        Log.d("LOG", Arrays.toString(data));
         Log.d("LOG", postfix.toString());
         Log.d("LOG", stack.toString());
 
     }
 
-    public void compute(String input){
+    public Float computationHelper(String operator, float operand1, float operand2){
+        if(operator.equals("+")){
+            return operand1 + operand2;
+        }else if(operator.equals("-")){
+            return operand1 - operand2;
+        }else if(operator.equals("x")){
+            return operand1 * operand2;
+        }else if(operator.equals("/")){
+            return operand1 / operand2;
+        }else if(operator.equals("%")){
+            return operand1 % operand2;
+        }else{
+            Log.d("LOG","dwjdjawjdwjdwakawdljawd");
+            return null;
+        }
+    }
+
+    public Float compute(String input){
+        float op1, op2, res;
+
         stack.clear();
         postfix.clear();
+        operands.clear();
+
         parseOperations(input);
 
+        for(String s : postfix){
+            if(isOperand(s)) operands.addLast(Float.parseFloat(s));
+            else{
+                op2 = operands.removeLast();
+                op1 = operands.removeLast();
+                res = computationHelper(s, op1, op2);
+                operands.addLast(res);
+            }
+        }
 
-        /*
-        *   PUT COMPUTATION HERE
-        *
-        * */
+        return operands.removeLast();
     }
 
     public void buttonClicked(View view){
@@ -185,7 +215,9 @@ public class MainActivity extends AppCompatActivity{
                 break;
             case R.id.btn_clr: clear();
                 break;
-            case R.id.btn_equals: compute(calcScreen.getText().toString());
+            case R.id.btn_equals:
+                float result = compute(calcScreen.getText().toString());
+                calcScreen.setText(Float.toString(result));
                 break;
             default:
                 break;
