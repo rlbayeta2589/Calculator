@@ -3,9 +3,15 @@ package com.example.ics_user.myapplication;
 import android.content.DialogInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -14,13 +20,24 @@ public class MainActivity extends AppCompatActivity{
     boolean sign = false;
     boolean signReset = true;
     boolean parenthesis = false;
-s
+
+    LinkedList<String> stack = new LinkedList<String>();
+    ArrayList<String> postfix = new ArrayList<String>();
+
+    HashMap<String,Integer> precedenceValue = new HashMap<String, Integer>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         calcScreen = (TextView) findViewById(R.id.calc_screen);
+
+        precedenceValue.put("x",3);
+        precedenceValue.put("/",3);
+        precedenceValue.put("+",2);
+        precedenceValue.put("-",2);
+        precedenceValue.put("(",1);
 
         bindHoldClear();
     }
@@ -69,8 +86,61 @@ s
         if(curr.length() > 0) calcScreen.setText(curr.substring(0,curr.length()-1));
     }
 
-    public void compute(){
+    public boolean isOperand(String op){
+        return op.matches("-?\\d+(\\.\\d+)?");
+    }
 
+    public void parseOperations(String input){
+        //idea of splitting from http://stackoverflow.com/a/13525053
+
+        //algo for infix to postfix
+        //http://interactivepython.org/runestone/static/pythonds/BasicDS/InfixPrefixandPostfixExpressions.html
+
+        String[] data = input.split("(?<=[-+x/(])|(?=[-+x/)])");
+
+        int i;
+
+        for(i=0;i<data.length;i++) {
+            String s = data[i];
+
+            if(isOperand(s)){
+                postfix.add(s);
+            }else if(s.equals("(")){
+                stack.addLast(s);
+            }else if(s.equals(")")){
+                while(!stack.getLast().equals("(")){
+                    postfix.add(stack.removeLast());
+                }
+                stack.removeLast();
+            }else{
+                while(!stack.isEmpty() && !stack.getLast().equals("(") &&
+                        precedenceValue.get(stack.getLast()) >= precedenceValue.get(s)){
+                    postfix.add(stack.removeLast());
+                }
+                stack.addLast(s);
+            }
+        }
+
+        while(!stack.isEmpty()){
+            postfix.add(stack.removeLast());
+        }
+
+        Log.d("LOG", Arrays.toString(data));
+        Log.d("LOG", postfix.toString());
+        Log.d("LOG", stack.toString());
+
+    }
+
+    public void compute(String input){
+        stack.clear();
+        postfix.clear();
+        parseOperations(input);
+
+
+        /*
+        *   PUT COMPUTATION HERE
+        *
+        * */
     }
 
     public void buttonClicked(View view){
@@ -115,7 +185,7 @@ s
                 break;
             case R.id.btn_clr: clear();
                 break;
-            case R.id.btn_equals: compute();
+            case R.id.btn_equals: compute(calcScreen.getText().toString());
                 break;
             default:
                 break;
